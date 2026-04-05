@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoLine OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #000000; --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff; --text-muted: rgba(255, 255, 255, 0.5);
+            --apple-blue: #4F8CFF; --apple-violet: #7A5CFF; --apple-green: #30D158; --apple-yellow: #FF9F0A; --apple-red: #FF453A;
+        }
+
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;}
+        .container { width: 100%; max-width: 1100px; }
+
+        .nav-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 40px; }
+        h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+
+        .btn-text { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; font-weight: 500; transition: color 0.3s ease; font-family: 'Inter'; }
+        .btn-text:hover { color: white; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-bottom: 30px; }
+        
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 35px; transition: border-color 0.3s, box-shadow 0.3s; position: relative; overflow: hidden; }
+        .glass-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 20% 0%, rgba(79,140,255,0.05), transparent 55%); }
+        .glass-card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06); }
+        .glass-card h2 { margin: 0 0 25px; font-size: 18px; font-weight: 600; color: white; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;}
+        .stat-box { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; text-align: center; }
+        .stat-lbl { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;}
+        .stat-val { font-size: 40px; font-weight: 700; color: white; line-height: 1; letter-spacing: -1px;}
+
+        input { width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 12px; font-family: 'Inter'; font-size: 15px; margin-bottom: 15px; transition: border-color 0.2s ease; }
+        input:focus { border-color: var(--apple-blue); outline: none; }
+
+        .btn { background: linear-gradient(135deg, var(--apple-blue), var(--apple-violet)); color: white; font-weight: 600; font-family: 'Inter'; font-size: 15px; padding: 14px 24px; border: none; border-radius: 14px; cursor: pointer; transition: all 0.2s ease; width: 100%; box-shadow: 0 4px 18px rgba(79,140,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(122,92,255,0.35); }
+        .btn:active { transform: translateY(1px); }
+        .btn-green { background: var(--apple-green); color: #000; font-weight: 600; }
+        .btn-red { background: rgba(255,69,58,0.1); border: 1px solid var(--apple-red); color: var(--apple-red); }
+        .btn-red:hover { background: rgba(255,69,58,0.2); transform: none; }
+
+        .msg { font-size: 13px; margin-top: -10px; margin-bottom: 15px; min-height: 18px; font-weight: 500;}
+        .success { color: var(--apple-green); } .error { color: var(--apple-red); }
+
+        /* Modern Glass Table */
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        .filter-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 10px; border: 1px solid var(--glass-border);}
+        .filter-tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+        .filter-tab.active { background: var(--glass-bg); color: white; border: 1px solid var(--glass-border);}
+
+        .table-wrap { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
+        th { padding: 15px; color: var(--text-muted); font-size: 12px; font-weight: 500; text-transform: uppercase; border-bottom: 1px solid var(--glass-border); letter-spacing: 1px;}
+        td { padding: 15px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;}
+        tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .badge { padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; border: 1px solid var(--glass-border); display: inline-block; background: rgba(0,0,0,0.5); }
+        .bg-waiting { color: var(--apple-yellow); border-color: rgba(255, 159, 10, 0.3); }
+        .bg-completed { color: var(--apple-green); border-color: rgba(48, 209, 88, 0.3); }
+
+        .list-wrap { max-height: 250px; overflow-y: auto; padding-right: 10px; margin-top: 20px; }
+        .list-wrap::-webkit-scrollbar { width: 6px; }
+        .list-wrap::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 10px; }
+        
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--apple-green); color: white; padding: 16px 30px; border-radius: 30px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div id="toast" class="toast">Operation executing...</div>
+
+<div class="container">
+    <div class="nav-header">
+        <div>
+            <h1>NoLine OS</h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 5px 0 0;">Systems Administration</p>
+        </div>
+        <button class="btn-text" onclick="window.logout()">Log off</button>
+    </div>
+
+    <!-- Active Analytics -->
+    <div class="stat-grid">
+        <div class="stat-box">
+            <div class="stat-lbl">Active Corridors</div>
+            <div class="stat-val" id="st-queues">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-lbl">People Waiting</div>
+            <div class="stat-val" id="st-waiting">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-lbl" style="color: var(--apple-green);">Served Today</div>
+            <div class="stat-val" id="st-served" style="color: var(--apple-green);">0</div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="glass-card">
+            <h2>Instantiate Queue</h2>
+            <input type="text" id="cq-biz" placeholder="Enterprise Group">
+            <input type="text" id="cq-name" placeholder="Queue Name">
+            <div id="cq-msg" class="msg"></div>
+            <button class="btn" onclick="window.adminCore.createQueue()">Deploy Architecture</button>
+        </div>
+
+        <div class="glass-card" style="border-top: 1px solid var(--apple-green); background: rgba(48,209,88,0.02)">
+            <h2>Terminal Verification</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">PINs are permanently redacted locally.</p>
+            <input type="text" id="vp-pin" placeholder="Enter PIN" maxlength="4" style="text-align: center; letter-spacing: 12px; font-size: 24px; font-weight: 700; color: var(--apple-green);">
+            <div id="vp-msg" class="msg"></div>
+            <button class="btn btn-green" onclick="window.adminCore.verifyPin()">Grant Access</button>
+        </div>
+    </div>
+
+    <!-- Admin Table completely disconnected from PIN payload rendering -->
+    <div class="glass-card" style="margin-bottom: 30px;">
+        <div class="table-controls">
+            <h2 style="margin: 0;">Network Traffic Log</h2>
+            <div class="filter-tabs">
+                <div class="filter-tab active" onclick="window.adminCore.setFilter('all', this)">All Nodes</div>
+                <div class="filter-tab" onclick="window.adminCore.setFilter('waiting', this)">Waiting</div>
+                <div class="filter-tab" onclick="window.adminCore.setFilter('served', this)">Completed</div>
+            </div>
+        </div>
+        
+        <div class="table-wrap">
+            <table id="engine-table">
+                <thead>
+                    <tr><th>Token</th><th>Identity</th><th>Assigned Queue</th><th>Tracking Status</th><th>Timestamp</th></tr>
+                </thead>
+                <tbody id="user-list">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Fetching logs...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="glass-card">
+            <h2>Active Corridors</h2>
+            <div class="list-wrap" id="queue-list">
+                <p style="color: var(--text-muted); font-size: 13px;">No corridors tracked.</p>
+            </div>
+        </div>
+
+        <!-- System Reset utilizing rigorous loop fetching protocols -->
+        <div class="glass-card" style="border: 1px solid rgba(255, 69, 58, 0.3); background: rgba(255, 69, 58, 0.05);">
+            <h2 style="color: var(--apple-red); margin-bottom: 15px;">Wipe System Architecture</h2>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin: 0 0 25px; line-height: 1.5;">This will meticulously loop through all collections, deleting every queue and every tracking entry independently natively within Firebase.</p>
+            <button class="btn btn-red" id="btn-wipe" style="width: auto; padding: 12px 20px;" onclick="window.adminCore.hardReset()">Execute Full Reset</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const cfg = { apiKey: "AIzaSyCVmB3rX1fqz7ctjVgHEIzwiiy8vF4L-MI", authDomain: "noline-20691.firebaseapp.com", projectId: "noline-20691" };
+    const db = getFirestore(initializeApp(cfg));
+
+    window.logout = () => { localStorage.removeItem('noline_name'); window.location.href = 'login.html'; };
+
+    const getEl = id => { const e=document.getElementById(id); return e; };
+    const setHtml = (id, ht) => { const e=getEl(id); if(e) e.innerHTML = ht; };
+    const setText = (id, tx) => { const e=getEl(id); if(e) e.innerText = tx; };
+    const getVal = id => { const e=getEl(id); return e ? e.value.trim() : ''; };
+
+    let stateQ = {};
+    let activeFilter = 'all';
+    let allEntries = [];
+
+    window.showToast = (msg, isErr=false) => {
+        const t = getEl('toast'); if(!t) return;
+        t.innerText = msg;
+        t.style.borderColor = isErr ? 'var(--apple-red)' : 'var(--apple-green)';
+        t.classList.add('show');
+        setTimeout(()=> t.classList.remove('show'), 3000);
+    }
+
+    window.adminCore = {
+        init: () => {
+             // Queues
+            onSnapshot(collection(db, "queues"), (snap) => {
+                const list = getEl('queue-list'); if(!list) return;
+                setText('st-queues', snap.size.toString());
+                
+                if(snap.empty) { list.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No corridors tracked.</p>'; stateQ = {}; return; }
+                
+                let html = ''; stateQ = {};
+                snap.forEach(d => {
+                    const data = d.data(); stateQ[d.id] = data.name;
+                    html += `
+                        <div class="list-item">
+                            <div>
+                                <div style="color: white; font-weight: 500; font-size: 15px; margin-bottom: 4px;">${data.name}</div>
+                                <div style="color: var(--text-muted); font-size: 12px;">${data.businessName}</div>
+                            </div>
+                            <button class="btn-text" style="color: var(--apple-red); font-size: 12px; padding: 6px 12px; border-radius: 8px;" onclick="window.adminCore.deleteQueue('${d.id}')">Delete</button>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+                window.adminCore.renderTable(); 
+            });
+
+            // Entries stream strictly omitting PIN rendering payload requests
+            onSnapshot(collection(db, "queue_entries"), (snap) => {
+                allEntries = snap.docs.map(d=>({id: d.id, ...d.data()})).sort((a,b)=> (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
+                
+                let waiting = 0; let served = 0; 
+                allEntries.forEach(e => {
+                    if(e.status === 'waiting') waiting++;
+                    if(e.status === 'served') served++;
+                });
+
+                setText('st-waiting', waiting.toString()); setText('st-served', served.toString());
+                window.adminCore.renderTable();
+            });
+        },
+
+        setFilter: (fType, element) => {
+            activeFilter = fType;
+            document.querySelectorAll('.filter-tab').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+            window.adminCore.renderTable();
+        },
+
+        renderTable: () => {
+            const list = getEl('user-list'); if(!list) return;
+            
+            const filtered = allEntries.filter(e => {
+                if(activeFilter === 'all') return true;
+                return e.status === activeFilter;
+            });
+
+            if(filtered.length === 0) { list.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">Queue empty.</td></tr>`; return; }
+
+            let html = '';
+            filtered.forEach(e => {
+                let badgeClass = 'bg-waiting'; let badgeTxt = 'WAITING';
+                if(e.status === 'served') { badgeClass = 'bg-completed'; badgeTxt = 'COMPLETED'; }
+
+                const ts = e.timestamp ? new Date(e.timestamp.toMillis()).toLocaleTimeString() : 'Unknown';
+
+                html += `
+                    <tr>
+                        <td style="font-weight: 600; color: white;">${e.token}</td>
+                        <td style="font-weight: 500;">${e.name}</td>
+                        <td style="color: var(--text-muted);">${stateQ[e.queueId] || 'Deleted Node'}</td>
+                        <td><span class="badge ${badgeClass}">${badgeTxt}</span></td>
+                        <td style="color: var(--text-muted); font-size: 13px;">${ts}</td>
+                    </tr>
+                `;
+            });
+            list.innerHTML = html;
+        },
+
+        createQueue: async () => {
+            const biz = getVal('cq-biz'); const nm = getVal('cq-name');
+            if(!biz || !nm) { setHtml('cq-msg', '<span class="error">Data missing.</span>'); return; }
+            setHtml('cq-msg', '<span class="success">Deploying...</span>');
+            
+            try {
+                await addDoc(collection(db, "queues"), { businessName: biz, name: nm, createdAt: serverTimestamp() });
+                const bE = getEl('cq-biz'); if(bE) bE.value=''; const nE = getEl('cq-name'); if(nE) nE.value='';
+                setTimeout(()=>setHtml('cq-msg', ''), 2000);
+            } catch(e) { setHtml('cq-msg', '<span class="error">Deployment failed.</span>'); }
+        },
+
+        verifyPin: async () => {
+            const pin = getVal('vp-pin');
+            if(pin.length !== 4) { setHtml('vp-msg', '<span class="error">Invalid parameters.</span>'); return; }
+
+            try {
+                const q = query(collection(db, "queue_entries"), where("pin", "==", pin), where("status", "==", "waiting"));
+                const snap = await getDocs(q);
+                if(!snap.empty) {
+                    await updateDoc(doc(db, "queue_entries", snap.docs[0].id), { status: "served", pin: null });
+                    setHtml('vp-msg', '<span class="success">Access Granted.</span>');
+                    const pe = getEl('vp-pin'); if(pe) pe.value='';
+                } else { setHtml('vp-msg', '<span class="error">Validation failed.</span>'); }
+            } catch(e) { setHtml('vp-msg', '<span class="error">Database hook failed.</span>'); }
+            setTimeout(()=>setHtml('vp-msg', ''), 3000);
+        },
+
+        deleteQueue: async (qid) => {
+            if(!confirm("Eradicating this node wipes all users actively routing. Proceed?")) return;
+            try {
+                await deleteDoc(doc(db, "queues", qid));
+                const snap = await getDocs(query(collection(db, "queue_entries"), where("queueId", "==", qid)));
+                for (const docSnap of snap.docs) {
+                    await deleteDoc(doc(db, "queue_entries", docSnap.id));
+                }
+                window.showToast("Queue Deleted Successfully");
+            } catch(e) { window.showToast("Deletion Failure", true); }
+        },
+
+        hardReset: async () => {
+            if(!confirm("Warning: Initiating complete Firestore architectural purge. Execute?")) return;
+            const btn = getEl('btn-wipe'); if(btn) { btn.innerText = "Wiping Arrays..."; btn.disabled = true; }
+            try {
+                // Strict iterative deletes manually wiping payloads correctly due to Firebase console constraints
+                const qs = await getDocs(collection(db, "queues"));
+                for (const d of qs.docs) { await deleteDoc(d.ref); }
+                
+                const es = await getDocs(collection(db, "queue_entries"));
+                for (const d of es.docs) { await deleteDoc(d.ref); }
+                
+                localStorage.clear();
+                window.showToast("System Reset Successfully! Refreshing layer.");
+                
+                setTimeout(()=> window.location.reload(), 2000);
+            } catch(e) { 
+                console.error("Wipe Loop Failure", e); 
+                window.showToast("Wipe Failed", true);
+                if(btn) { btn.innerText = "Execute Full Reset"; btn.disabled = false; }
+            }
+        }
+    };
+
+    window.adminCore.init();
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoLine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #000000;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --apple-blue: #4F8CFF;
+            --apple-violet: #7A5CFF;
+            --apple-red: #FF453A;
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh; margin: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px; padding: 44px 40px;
+            width: 100%; max-width: 360px;
+            box-sizing: border-box; text-align: center;
+            position: relative; overflow: hidden;
+            box-shadow: 0 12px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .glass-card::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 30% -15%, rgba(79,140,255,0.08), transparent 55%),
+                radial-gradient(ellipse at 70% 115%, rgba(122,92,255,0.06), transparent 55%);
+        }
+
+        h1 { margin: 0 0 6px; font-size: 30px; font-weight: 600; letter-spacing: -1px; color: white; position: relative; z-index: 1; }
+        p { color: var(--text-muted); font-size: 14px; margin: 0 0 36px; position: relative; z-index: 1; }
+
+        input {
+            width: 100%; padding: 15px 16px; box-sizing: border-box;
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            color: white; border-radius: 14px; font-family: 'Inter', sans-serif;
+            font-size: 16px; margin-bottom: 20px;
+            transition: border-color 0.2s, box-shadow 0.3s;
+            position: relative; z-index: 1;
+        }
+        input:focus { border-color: var(--apple-blue); outline: none; box-shadow: 0 0 0 3px rgba(79,140,255,0.12); }
+
+        .btn {
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-violet));
+            color: white; font-weight: 600; font-family: 'Inter', sans-serif; font-size: 16px;
+            padding: 15px; border: none; border-radius: 14px; cursor: pointer; width: 100%;
+            box-shadow: 0 4px 18px rgba(79,140,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: transform 0.2s, box-shadow 0.3s;
+            position: relative; z-index: 1;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(122,92,255,0.35); }
+        .btn:active { transform: translateY(1px); }
+
+        .error {
+            color: var(--apple-red); font-size: 13px; font-weight: 500;
+            margin-top: -12px; margin-bottom: 14px; display: none;
+            position: relative; z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-card">
+        <h1>NoLine</h1>
+        <p>Queue Management System</p>
+
+        <input type="text" id="user-name" placeholder="Enter your name">
+        <div id="error-msg" class="error">Please enter your name to continue.</div>
+
+        <button class="btn" onclick="window.enterNetwork()">Continue</button>
+    </div>
+
+    <script>
+        const getEl = (id) => document.getElementById(id);
+
+        window.enterNetwork = () => {
+            const nInput = getEl('user-name');
+            const err = getEl('error-msg');
+            if (!nInput || !err) return;
+
+            const name = nInput.value.trim();
+            if (name === "") {
+                err.style.display = 'block';
+            } else {
+                err.style.display = 'none';
+                localStorage.setItem('noline_name', name);
+                window.location.href = 'customer.html';
+            }
+        };
+
+        // Enter key support
+        const inp = getEl('user-name');
+        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') window.enterNetwork(); });
+
+        if (localStorage.getItem('noline_name')) window.location.href = 'customer.html';
+    </script>
+</body>
+</html>

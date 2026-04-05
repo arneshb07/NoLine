@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoLine — Queue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #000000;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --apple-blue: #4F8CFF; --apple-violet: #7A5CFF;
+            --apple-green: #30D158; --apple-yellow: #FF9F0A;
+            --text-main: #ffffff; --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh; margin: 0;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .btn-nav {
+            position: absolute; top: 30px; left: 30px;
+            background: transparent; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 14px; font-weight: 500;
+            transition: color 0.2s; font-family: 'Inter'; z-index: 10;
+        }
+        .btn-nav:hover { color: white; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px; padding: 50px 40px;
+            width: 100%; max-width: 480px;
+            text-align: center; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 12px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .glass-card::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 25% -5%, rgba(79,140,255,0.06), transparent 60%),
+                radial-gradient(ellipse at 75% 105%, rgba(122,92,255,0.05), transparent 60%);
+        }
+
+        .badge {
+            display: inline-block; padding: 6px 16px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; text-transform: uppercase;
+            border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5);
+            color: var(--text-muted); margin-bottom: 40px; position: relative; z-index: 1;
+        }
+        .badge.bg-waiting { color: var(--apple-yellow); border-color: rgba(255,159,10,0.3); }
+        .badge.bg-serving { color: var(--apple-blue); border-color: rgba(79,140,255,0.3); }
+
+        .pos-lbl {
+            font-size: 13px; color: var(--text-muted); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+            position: relative; z-index: 1;
+        }
+        .pos-val {
+            font-size: 100px; font-weight: 700; color: white;
+            line-height: 1; letter-spacing: -4px; margin: 0 0 40px;
+            position: relative; z-index: 1;
+        }
+
+        .stats-grid {
+            display: flex; justify-content: center; gap: 50px;
+            margin-bottom: 35px; width: 100%;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 22px;
+            box-sizing: border-box; position: relative; z-index: 1;
+        }
+        .stat-block { display: flex; flex-direction: column; gap: 5px; }
+        .st-lbl { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .st-val { font-size: 22px; font-weight: 600; color: white; }
+
+        .btn {
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-violet));
+            color: white; font-weight: 600; font-family: 'Inter'; font-size: 16px;
+            padding: 16px 30px; border: none; border-radius: 14px; cursor: pointer;
+            width: 100%; position: relative; z-index: 1;
+            box-shadow: 0 4px 18px rgba(79,140,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(122,92,255,0.35); }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-text {
+            background: transparent; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 13px; font-weight: 500;
+            font-family: 'Inter'; transition: color 0.2s;
+        }
+        .btn-text:hover { color: white; }
+
+        /* PIN card */
+        .pin-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 22px; padding: 35px 30px;
+            margin-bottom: 20px; width: 100%; box-sizing: border-box;
+            box-shadow: 0 0 40px rgba(79,140,255,0.08), inset 0 0 20px rgba(0,0,0,0.4);
+            position: relative; z-index: 1;
+        }
+
+        /* QRNG Panel */
+        .qrng-panel {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s, padding 0.3s, margin 0.3s;
+            padding: 0 20px; margin: 0; width: 100%; box-sizing: border-box;
+            position: relative; z-index: 1;
+        }
+        .qrng-panel.expanded {
+            max-height: 260px; opacity: 1;
+            padding: 22px 20px; margin: 12px 0 0;
+            overflow-y: auto;
+        }
+        .qrng-panel::-webkit-scrollbar { width: 4px; }
+        .qrng-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .qrng-source-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .qrng-source-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; }
+
+        .qrng-flow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .qrng-node {
+            background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 8px 0; font-size: 10px; color: var(--text-muted);
+            font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+            text-align: center; width: 68px; transition: all 0.4s;
+        }
+        .qrng-connector { flex: 1; height: 1px; background: rgba(255,255,255,0.06); position: relative; margin: 0 3px; overflow: hidden; }
+        .qrng-dot { position: absolute; top: -2px; left: -6px; width: 5px; height: 5px; border-radius: 50%; background: var(--apple-blue); box-shadow: 0 0 8px var(--apple-blue); opacity: 0; }
+
+        .qrng-flow.running .qrng-node { color: white; border-color: rgba(79,140,255,0.5); box-shadow: 0 0 12px rgba(79,140,255,0.15); animation: nodePulse 2.5s ease-in-out infinite alternate; }
+        .qrng-flow.running .qrng-dot { animation: dotTravel 1.8s linear infinite; }
+        .qrng-flow.is-crypto .qrng-node { border-color: rgba(122,92,255,0.5); box-shadow: 0 0 12px rgba(122,92,255,0.15); }
+        .qrng-flow.is-crypto .qrng-dot { background: var(--apple-violet); box-shadow: 0 0 8px var(--apple-violet); }
+
+        @keyframes nodePulse { 0%{box-shadow:0 0 8px rgba(79,140,255,0.1)} 100%{box-shadow:0 0 20px rgba(79,140,255,0.3)} }
+        @keyframes dotTravel { 0%{left:-6px;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{left:100%;opacity:0} }
+
+        .qrng-output {
+            font-family: 'SF Mono','Fira Code',monospace; font-size: 11px;
+            padding: 10px 14px; border-radius: 10px;
+            border: 1px solid rgba(79,140,255,0.15); background: rgba(79,140,255,0.04);
+            color: var(--apple-blue); word-break: break-all;
+        }
+
+        /* Fullscreen verification */
+        .fs-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(15px); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        .fs-overlay.active { opacity: 1; pointer-events: auto; }
+        .circle-check {
+            width: 120px; height: 120px;
+            background: rgba(48,209,88,0.1); border: 2px solid var(--apple-green);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            transform: scale(0); transition: transform 0.6s cubic-bezier(0.175,0.885,0.32,1.275);
+            margin-bottom: 35px; box-shadow: 0 0 60px rgba(48,209,88,0.2);
+        }
+        .fs-overlay.active .circle-check { transform: scale(1); }
+        .checkmark { color: var(--apple-green); font-size: 56px; font-weight: bold; }
+        .done-txt {
+            color: white; font-size: 30px; font-weight: 600; letter-spacing: -1px;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.5s ease 0.3s;
+        }
+        .fs-overlay.active .done-txt { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<button class="btn-nav" onclick="window.location.href='my-queues.html'">← Tracker</button>
+
+<div class="glass-card" id="main-content">
+    <div id="status-badge" class="badge">SCANNING…</div>
+    <div class="pos-lbl">Position</div>
+    <div class="pos-val" id="position-display">#—</div>
+
+    <div class="stats-grid">
+        <div class="stat-block"><span class="st-lbl">Token</span><span class="st-val" id="tkn-display">—</span></div>
+        <div class="stat-block"><span class="st-lbl">Ahead</span><span class="st-val" id="ahead-count">—</span></div>
+    </div>
+
+    <div id="pin-section" style="width:100%; position:relative; z-index:1;">
+        <button id="btn-arrive" class="btn"
+                style="background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);box-shadow:none;"
+                onclick="window.handleArrival()">I Have Arrived</button>
+    </div>
+</div>
+
+<div class="fs-overlay" id="verified-overlay">
+    <div class="circle-check"><span class="checkmark">✓</span></div>
+    <div class="done-txt">Verified</div>
+    <p style="color:var(--text-muted);font-size:15px;margin:12px 0 40px;">Your visit is complete.</p>
+    <button class="btn" style="max-width:200px;" onclick="window.location.href='my-queues.html'">Done</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, updateDoc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const cfg = { apiKey:"AIzaSyCVmB3rX1fqz7ctjVgHEIzwiiy8vF4L-MI", authDomain:"noline-20691.firebaseapp.com", projectId:"noline-20691" };
+    const db = getFirestore(initializeApp(cfg));
+
+    if (!localStorage.getItem('noline_name')) window.location.href = 'login.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const myDocId = params.get('docId'), myQueueId = params.get('queueId');
+    if (!myDocId || !myQueueId) window.location.href = 'my-queues.html';
+
+    const getEl = id => document.getElementById(id);
+    const setText = (id, t) => { const e = getEl(id); if (e) e.textContent = t; };
+    const setHtml = (id, h) => { const e = getEl(id); if (e) e.innerHTML = h; };
+
+    // ── QRNG ENGINE (same multi-proxy retry as customer.html) ──
+    const PROXY_URLS = [
+        n => `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://qrng.anu.edu.au/API/jsonI.php?length=${n}&type=uint8`)}`,
+        n => `https://api.allorigins.win/get?url=${encodeURIComponent(`https://qrng.anu.edu.au/API/jsonI.php?length=${n}&type=uint8`)}`,
+    ];
+
+    async function singleAttempt(url, timeout) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeout);
+        try {
+            const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+            clearTimeout(timer);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            if (json.contents) { const inner = JSON.parse(json.contents); if (inner?.success && Array.isArray(inner.data)) return inner.data; throw new Error('wrap'); }
+            if (json.success && Array.isArray(json.data)) return json.data;
+            throw new Error('no data');
+        } catch(e) { clearTimeout(timer); throw e; }
+    }
+
+    async function resolveQRNG(count = 4) {
+        for (const makeUrl of PROXY_URLS) {
+            const url = makeUrl(count) + `&_=${Date.now()}`;
+            for (let a = 0; a < 3; a++) {
+                try {
+                    const data = await singleAttempt(url, 4000);
+                    return { raw: data.slice(0, count), source: 'quantum' };
+                } catch(e) { if (a < 2) await new Promise(r => setTimeout(r, 300)); }
+            }
+        }
+        try {
+            const data = await singleAttempt(`https://qrng.anu.edu.au/API/jsonI.php?length=${count}&type=uint8&_=${Date.now()}`, 3000);
+            return { raw: data.slice(0, count), source: 'quantum' };
+        } catch(e) {}
+
+        const arr = new Uint8Array(count); window.crypto.getRandomValues(arr);
+        return { raw: Array.from(arr), source: 'crypto' };
+    }
+
+    // ── QRNG PANEL TOGGLE ──
+    window.toggleQRNG = () => {
+        const p = getEl('pin-qrng'); const f = getEl('pin-flow');
+        if (!p) return;
+        if (p.classList.contains('expanded')) {
+            p.classList.remove('expanded'); if (f) f.classList.remove('running');
+        } else {
+            p.classList.add('expanded'); if (f) f.classList.add('running');
+        }
+    };
+
+    // ── LIVE POSITION ──
+    onSnapshot(query(collection(db, "queue_entries"), where("queueId", "==", myQueueId)), snap => {
+        let status = 'missing', myTime = 0, token = null;
+        snap.forEach(d => {
+            if (d.id === myDocId) {
+                status = d.data().status; token = d.data().token;
+                myTime = d.data().timestamp?.toMillis() || Date.now();
+            }
+        });
+
+        if (status === 'served') {
+            const ov = getEl('verified-overlay'); if (ov) ov.classList.add('active');
+            let st = JSON.parse(localStorage.getItem('myQueues') || '[]');
+            localStorage.setItem('myQueues', JSON.stringify(st.filter(x => x.docId !== myDocId)));
+            return;
+        }
+
+        const bzg = getEl('status-badge');
+        if (bzg) {
+            bzg.textContent = status.toUpperCase(); bzg.className = 'badge';
+            if (status === 'waiting') bzg.className = 'badge bg-waiting';
+            if (status === 'serving') bzg.className = 'badge bg-serving';
+        }
+        if (token) setText('tkn-display', token.toString());
+
+        let ahead = 0;
+        snap.forEach(d => {
+            if (d.id !== myDocId && d.data().status === 'waiting') {
+                if ((d.data().timestamp?.toMillis() || Date.now()) < myTime) ahead++;
+            }
+        });
+        setText('ahead-count', ahead.toString());
+        setText('position-display', '#' + (ahead + 1));
+    });
+
+    // ── PIN GENERATION ──
+    window.handleArrival = async () => {
+        const btn = getEl('btn-arrive');
+        if (btn) { btn.textContent = "Generating PIN…"; btn.disabled = true; }
+
+        try {
+            const data = await resolveQRNG(4);
+            const pinStr = data.raw.map(n => n % 10).join('');
+            await updateDoc(doc(db, "queue_entries", myDocId), { pin: pinStr });
+
+            const isQ = data.source === 'quantum';
+            const srcTxt = isQ ? 'Quantum (ANU)' : 'Secure Random (Crypto)';
+            const srcDesc = isQ
+                ? 'Values captured from subatomic quantum vacuum fluctuations at ANU.'
+                : 'Local cryptographic PRNG used as fallback entropy source.';
+            const lblArr = isQ ? 'Quantum Random Values' : 'Secure Random Values';
+            const sColor = isQ ? 'var(--apple-blue)' : 'var(--apple-violet)';
+            const flowClass = `qrng-flow running${isQ ? '' : ' is-crypto'}`;
+            const bdrColor = isQ ? 'rgba(79,140,255,0.15)' : 'rgba(122,92,255,0.15)';
+            const bgColor = isQ ? 'rgba(79,140,255,0.04)' : 'rgba(122,92,255,0.04)';
+
+            setHtml('pin-section', `
+                <div class="pin-card">
+                    <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;font-weight:600;letter-spacing:2px;margin-bottom:20px;">Secure PIN</div>
+                    <div style="font-size:72px;font-weight:700;color:white;letter-spacing:14px;margin-left:14px;line-height:1;">${pinStr}</div>
+                </div>
+
+                <button class="btn-text" style="width:100%;margin-bottom:8px;color:var(--text-muted);" onclick="window.toggleQRNG()">How this was generated</button>
+
+                <div id="pin-qrng" class="qrng-panel">
+                    <div class="qrng-source-label" style="color:${sColor};">${srcTxt}</div>
+                    <div class="qrng-source-desc">${srcDesc}</div>
+                    <div class="${flowClass}" id="pin-flow">
+                        <div class="qrng-node">Source</div>
+                        <div class="qrng-connector"><div class="qrng-dot"></div></div>
+                        <div class="qrng-node">Measure</div>
+                        <div class="qrng-connector"><div class="qrng-dot"></div></div>
+                        <div class="qrng-node">Output</div>
+                        <div class="qrng-connector"><div class="qrng-dot"></div></div>
+                        <div class="qrng-node" style="color:white;border-color:rgba(255,255,255,0.3);">PIN</div>
+                    </div>
+                    <div class="qrng-output" style="color:${sColor};border-color:${bdrColor};background:${bgColor};">${lblArr}: [${data.raw.join(', ')}]</div>
+                </div>
+            `);
+        } catch (err) {
+            console.error("PIN generation failed", err);
+            if (btn) { btn.textContent = "Retry"; btn.disabled = false; }
+        }
+    };
+</script>
+</body>
+</html>

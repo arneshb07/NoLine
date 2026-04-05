@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoLine — Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #000000;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --apple-blue: #4F8CFF; --apple-violet: #7A5CFF;
+            --apple-green: #30D158; --apple-red: #FF453A; --apple-yellow: #FF9F0A;
+            --text-main: #ffffff; --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh; margin: 0; padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .container { width: 100%; max-width: 650px; }
+
+        .nav-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 45px; }
+        h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -1px; }
+
+        .btn-text { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; font-weight: 500; transition: color 0.2s; font-family: 'Inter'; }
+        .btn-text:hover { color: white; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 32px;
+            margin-bottom: 20px; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .glass-card::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: radial-gradient(ellipse at 15% 0%, rgba(79,140,255,0.05), transparent 55%);
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.14);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; position: relative; z-index: 1; }
+
+        .badge {
+            padding: 6px 14px; border-radius: 12px; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; border: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.5); color: var(--text-muted);
+        }
+        .badge.bg-waiting { color: var(--apple-yellow); border-color: rgba(255,159,10,0.3); }
+        .badge.bg-serving { color: var(--apple-blue); border-color: rgba(79,140,255,0.3); }
+        .badge.bg-served { color: var(--apple-green); border-color: rgba(48,209,88,0.3); }
+
+        .metrics-grid {
+            display: flex; gap: 35px; margin-bottom: 28px; align-items: center;
+            position: relative; z-index: 1;
+        }
+        .pos-block { display: flex; flex-direction: column; }
+        .pos-large { font-size: 52px; font-weight: 700; color: white; line-height: 1; letter-spacing: -2px; }
+
+        .stats-block {
+            display: flex; flex-direction: column; gap: 14px; flex: 1;
+            padding-left: 35px; border-left: 1px solid var(--glass-border);
+        }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; }
+        .stat-lbl { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .stat-val { font-size: 16px; font-weight: 600; color: white; }
+
+        .btn {
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-violet));
+            color: white; font-weight: 600; font-family: 'Inter'; font-size: 15px;
+            padding: 14px 20px; border: none; border-radius: 14px; cursor: pointer;
+            text-align: center; position: relative; z-index: 1;
+            box-shadow: 0 4px 18px rgba(79,140,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(122,92,255,0.35); }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-outline {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            color: var(--text-main); box-shadow: none;
+        }
+        .btn-outline:hover { background: rgba(255,69,58,0.08); border-color: rgba(255,69,58,0.3); color: var(--apple-red); box-shadow: none; transform: none; }
+
+        .btn-group { display: flex; gap: 12px; position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-header">
+        <h1>My Queues</h1>
+        <div style="display: flex; gap: 24px;">
+            <button class="btn-text" onclick="window.location.href='customer.html'">+ Join</button>
+            <button class="btn-text" onclick="window.logout()">Log off</button>
+        </div>
+    </div>
+
+    <div id="queues-container">
+        <p style="text-align:center;color:var(--text-muted);margin-top:50px;font-size:14px;">Loading…</p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const cfg = { apiKey:"AIzaSyCVmB3rX1fqz7ctjVgHEIzwiiy8vF4L-MI", authDomain:"noline-20691.firebaseapp.com", projectId:"noline-20691" };
+    const db = getFirestore(initializeApp(cfg));
+
+    if (!localStorage.getItem('noline_name')) window.location.href = 'login.html';
+    window.logout = () => { localStorage.removeItem('noline_name'); window.location.href = 'login.html'; };
+
+    const getEl = id => document.getElementById(id);
+    const setText = (id, t) => { const e = getEl(id); if (e) e.textContent = t; };
+
+    window.leaveQueue = async (docId) => {
+        try {
+            await deleteDoc(doc(db, "queue_entries", docId));
+            let mq = JSON.parse(localStorage.getItem('myQueues') || '[]');
+            mq = mq.filter(q => q.docId !== docId);
+            localStorage.setItem('myQueues', JSON.stringify(mq));
+            const c = getEl(`card-${docId}`); if (c) c.remove();
+            // If no queues left, show empty state
+            if (mq.length === 0) {
+                const ct = getEl('queues-container');
+                if (ct) ct.innerHTML = `<div class="glass-card" style="align-items:center;padding:60px 40px;"><p style="color:var(--text-muted);margin-bottom:25px;">You're not in any queues.</p><button class="btn" onclick="window.location.href='customer.html'" style="max-width:220px;">Browse Queues</button></div>`;
+            }
+        } catch (e) { console.error("Leave failed", e); }
+    };
+
+    const container = document.getElementById('queues-container');
+    const myQueues = JSON.parse(localStorage.getItem('myQueues') || '[]');
+
+    if (myQueues.length === 0) {
+        if (container) container.innerHTML = `<div class="glass-card" style="align-items:center;padding:60px 40px;"><p style="color:var(--text-muted);margin-bottom:25px;">You're not in any queues.</p><button class="btn" onclick="window.location.href='customer.html'" style="max-width:220px;">Browse Queues</button></div>`;
+    } else {
+        if (container) container.innerHTML = '';
+
+        myQueues.forEach(q => {
+            if (!container) return;
+            const div = document.createElement('div');
+            div.className = 'glass-card'; div.id = `card-${q.docId}`;
+            div.innerHTML = `
+                <div class="header-row">
+                    <h3 style="margin:0;font-size:19px;color:white;font-weight:500;letter-spacing:-0.3px;">${q.queueName || 'Queue'}</h3>
+                    <div class="badge" id="bz-${q.docId}">SYNCING</div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="pos-block">
+                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-bottom:8px;letter-spacing:1px;">Position</div>
+                        <div class="pos-large" id="pos-${q.docId}">#—</div>
+                    </div>
+                    <div class="stats-block">
+                        <div class="stat-row">
+                            <span class="stat-lbl">Token</span>
+                            <span class="stat-val" id="tkn-${q.docId}">…</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-lbl">Ahead</span>
+                            <span class="stat-val" id="ahead-${q.docId}">…</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" style="flex:1;" onclick="window.leaveQueue('${q.docId}')">Leave</button>
+                    <button class="btn" style="flex:2;" onclick="window.location.href='queue-detail.html?docId=${q.docId}&queueId=${q.queueId}'">View Details</button>
+                </div>
+            `;
+            container.appendChild(div);
+
+            onSnapshot(query(collection(db, "queue_entries"), where("queueId", "==", q.queueId)), snap => {
+                let status = 'missing', myTime = 0, token = null;
+                snap.forEach(d => {
+                    if (d.id === q.docId) {
+                        status = d.data().status;
+                        myTime = d.data().timestamp?.toMillis() || Date.now();
+                        token = d.data().token;
+                    }
+                });
+
+                const badge = getEl(`bz-${q.docId}`);
+                if (status === 'missing' || status === 'served') {
+                    if (badge) {
+                        badge.className = status === 'served' ? 'badge bg-served' : 'badge';
+                        badge.textContent = status === 'served' ? 'VERIFIED' : 'DISCONNECTED';
+                    }
+                    setText(`ahead-${q.docId}`, '0'); setText(`pos-${q.docId}`, '#1');
+                    return;
+                }
+
+                if (badge) {
+                    badge.textContent = status.toUpperCase();
+                    if (status === 'waiting') badge.className = 'badge bg-waiting';
+                    if (status === 'serving') badge.className = 'badge bg-serving';
+                }
+                if (token) setText(`tkn-${q.docId}`, token.toString());
+
+                let ahead = 0;
+                snap.forEach(d => {
+                    if (d.id !== q.docId && d.data().status === 'waiting') {
+                        if ((d.data().timestamp?.toMillis() || Date.now()) < myTime) ahead++;
+                    }
+                });
+                setText(`ahead-${q.docId}`, ahead.toString());
+                setText(`pos-${q.docId}`, '#' + (ahead + 1));
+            });
+        });
+    }
+</script>
+</body>
+</html>
